@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # File: coco.py
 
-import numpy as np
-import os
-from termcolor import colored
-from tabulate import tabulate
-import tqdm
+import numpy as np # numpy module
+import os # os module
+from termcolor import colored # 텍스트에 칼라를 주는 모듈
+from tabulate import tabulate # 리스트 이런거는 표로 만들어주는 모듈
+import tqdm # 어느정도 진행됬는지 GUI 모듈.
 
 from tensorpack.utils import logger
 from tensorpack.utils.rect import FloatBox
@@ -15,47 +15,47 @@ from tensorpack.utils.argtools import log_once
 from config import config as cfg
 
 
-__all__ = ['COCODetection', 'COCOMeta']
+__all__ = ['COCODetection', 'COCOMeta'] # 이것은 무엇을 의미하는 코드인가요.@@@@@
 
 
-class _COCOMeta(object):
-    INSTANCE_TO_BASEDIR = {
-        'train2014': 'train2014',
+class _COCOMeta(object): # 인풋으로 오브젝트를 받아온다. 아웃풋은 무언가 시작할때, 클래스가 그런거 만들어주는 것같다.@@@@@
+    INSTANCE_TO_BASEDIR = {  # 인스턴드투베이스디렉토리 라는 이름으로 딕셔너리를 하나 만든다.
+        'train2014': 'train2014', 
         'val2014': 'val2014',
         'valminusminival2014': 'val2014',
         'minival2014': 'val2014',
         'test2014': 'test2014'
     }
 
-    def valid(self):
-        return hasattr(self, 'cat_names')
+    def valid(self):  # 유효성을 판단해주는 그런 함수인가요? @@@@@
+        return hasattr(self, 'cat_names') # 이 함수는 또 뭐지:
 
-    def create(self, cat_ids, cat_names):
+    def create(self, cat_ids, cat_names): # 생성해주는 함수이다. 리스트에 있는 아이디와 이름들 중에서 고양이 아이디와, 고양이 이름을 생성해준다.
         """
         cat_ids: list of ids
         cat_names: list of names
         """
-        assert not self.valid()
-        assert len(cat_ids) == cfg.DATA.NUM_CATEGORY and len(cat_names) == cfg.DATA.NUM_CATEGORY
-        self.cat_names = cat_names
-        self.class_names = ['BG'] + self.cat_names
+        assert not self.valid() # assert 는 디버깅할때만 효과가 있고 릴리즈에서는 안쓴다. 의미는 valid하면 에러를 발생해줘! 라는 의미.
+        assert len(cat_ids) == cfg.DATA.NUM_CATEGORY and len(cat_names) == cfg.DATA.NUM_CATEGORY # 고양이의 이름과 아이디가 cfg에 있는 데이터와 같지 않으면 에러가 발생한다.
+        self.cat_names = cat_names # 고양이 이름 초기화
+        self.class_names = ['BG'] + self.cat_names # BG를 붙혀서 클래스이름 초기화.
 
         # background has class id of 0
-        self.category_id_to_class_id = {
-            v: i + 1 for i, v in enumerate(cat_ids)}
-        self.class_id_to_category_id = {
+        self.category_id_to_class_id = { # 카테고리 아이디를 클래스 아이디로 dictionary 하나 만든다.
+            v: i + 1 for i, v in enumerate(cat_ids)} # 여기서 i 는 0부터 시작하는 인덱스 v는 고양이 이름이다.
+        self.class_id_to_category_id = { # 클래스 -> 카테고리 dictionary 하나 만든다.
             v: k for k, v in self.category_id_to_class_id.items()}
         cfg.DATA.CLASS_NAMES = self.class_names
 
 
-COCOMeta = _COCOMeta()
+COCOMeta = _COCOMeta() # 세션하나 만들어 주는 것인가?@@@@@
 
 
-class COCODetection(object):
-    def __init__(self, basedir, name):
-        assert name in COCOMeta.INSTANCE_TO_BASEDIR.keys(), name
-        self.name = name
-        self._imgdir = os.path.realpath(os.path.join(
+class COCODetection(object): # 코코디텍션이라는 클래스 만든다.
+    def __init__(self, basedir, name): # 초기화 함수- 베이스 디렉토리와 이름이 필요하다.
+        assert name in COCOMeta.INSTANCE_TO_BASEDIR.keys(), name # 인스턴스투베이스디렉토리 딕셔너리 안에 이름이 없으면 예외처리해준다. 있어야한다.
+        self.name = name # 이름 초기화
+        self._imgdir = os.path.realpath(os.path.join( 
             basedir, COCOMeta.INSTANCE_TO_BASEDIR[name]))
         assert os.path.isdir(self._imgdir), self._imgdir
         annotation_file = os.path.join(
