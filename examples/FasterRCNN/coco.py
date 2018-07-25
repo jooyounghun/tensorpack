@@ -55,29 +55,29 @@ class COCODetection(object): # 코코디텍션이라는 클래스 만든다.
     def __init__(self, basedir, name): # 초기화 함수- 베이스 디렉토리와 이름이 필요하다.
         assert name in COCOMeta.INSTANCE_TO_BASEDIR.keys(), name # 인스턴스투베이스디렉토리 딕셔너리 안에 이름이 없으면 예외처리해준다. 있어야한다.
         self.name = name # 이름 초기화
-        self._imgdir = os.path.realpath(os.path.join( 
+        self._imgdir = os.path.realpath(os.path.join(  # 이미지가 있는 디렉토리와 관련된 라인
             basedir, COCOMeta.INSTANCE_TO_BASEDIR[name]))
-        assert os.path.isdir(self._imgdir), self._imgdir
-        annotation_file = os.path.join(
+        assert os.path.isdir(self._imgdir), self._imgdir # 이미지가 없으면  self._imgdir  로 예외를 처리해준다.
+        annotation_file = os.path.join( # 파일 패스를 조인해준다. 무슨 파일 패스? @@@@@
             basedir, 'annotations/instances_{}.json'.format(name))
-        assert os.path.isfile(annotation_file), annotation_file
+        assert os.path.isfile(annotation_file), annotation_file # 패스에 파일이 없으면 annotation_file로 예외처리
 
-        from pycocotools.coco import COCO
-        self.coco = COCO(annotation_file)
+        from pycocotools.coco import COCO # cocodataset에 있는 coco 모듈을 쓴다.
+        self.coco = COCO(annotation_file) # 파일을 연다.
 
         # initialize the meta
-        cat_ids = self.coco.getCatIds()
-        cat_names = [c['name'] for c in self.coco.loadCats(cat_ids)]
-        if not COCOMeta.valid():
-            COCOMeta.create(cat_ids, cat_names)
-        else:
-            assert COCOMeta.cat_names == cat_names
+        cat_ids = self.coco.getCatIds() # coco 모듈의 getcatids()를 쓴다. 그래서 cat_ids 를 초기화한다.
+        cat_names = [c['name'] for c in self.coco.loadCats(cat_ids)]  # cat_names 리스트를 coco 모듈에 의해 각각 초기화한다.
+        if not COCOMeta.valid(): # 유효하지 않다면
+            COCOMeta.create(cat_ids, cat_names) # 하나 생성한다.
+        else: # 유효하다면
+            assert COCOMeta.cat_names == cat_names # 이름이 같은지 예외처리 해준다.
 
-        logger.info("Instances loaded from {}.".format(annotation_file))
+        logger.info("Instances loaded from {}.".format(annotation_file)) # log 를 남겨준다.
 
-    def load(self, add_gt=True, add_mask=False):
+    def load(self, add_gt=True, add_mask=False): # 로딩 함수 (mask는 알겠는데 ground truth가 뭐지?)
         """
-        Args:
+        Args: 
             add_gt: whether to add ground truth bounding box annotations to the dicts
             add_mask: whether to also add ground truth mask
 
@@ -87,19 +87,19 @@ class COCODetection(object): # 코코디텍션이라는 클래스 만든다.
                 and (if add_gt is True) 'boxes', 'class', 'is_crowd', and optionally
                 'segmentation'.
         """
-        if add_mask:
-            assert add_gt
-        with timed_operation('Load Groundtruth Boxes for {}'.format(self.name)):
-            img_ids = self.coco.getImgIds()
-            img_ids.sort()
-            # list of dict, each has keys: height,width,id,file_name
-            imgs = self.coco.loadImgs(img_ids)
+        if add_mask: # 만약 마스크가 있다면
+            assert add_gt # ground truth가 없으면 예외처리
+        with timed_operation('Load Groundtruth Boxes for {}'.format(self.name)): # timed_operation은 어디서 온거지?@@@@@
+            img_ids = self.coco.getImgIds() # 코코를 이용한 이미지 아이디 초기화
+            img_ids.sort() # 이미지 아이디 정렬
+            # list of dict, each has keys: height,width,id,file_name 
+            imgs = self.coco.loadImgs(img_ids) # 이미지 아이디를 인덱스로 한 이미지 로딩
 
-            for img in tqdm.tqdm(imgs):
-                self._use_absolute_file_name(img)
-                if add_gt:
-                    self._add_detection_gt(img, add_mask)
-            return imgs
+            for img in tqdm.tqdm(imgs): # tqdm으로 진행상황을 보여준다.
+                self._use_absolute_file_name(img) # _use_absuloute_file_name 은 어디서 온거지?@@@@@
+                if add_gt: # groung truth가 있다면
+                    self._add_detection_gt(img, add_mask) # _add_detection_gt함수를 수행하라. 근데 이 함수 뭐지? @@@@@
+            return imgs # 로딩함수의 리턴값은 이미지 객체이다.
 
     def _use_absolute_file_name(self, img):
         """
