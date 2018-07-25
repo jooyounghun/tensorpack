@@ -183,23 +183,23 @@ class COCODetection(object): # 코코디텍션이라는 클래스 만든다.
         logger.info("Ground-Truth Boxes:\n" + colored(table, 'cyan')) # 로그를 띄워준다.
 
     @staticmethod
-    def load_many(basedir, names, add_gt=True, add_mask=False):  # 
+    def load_many(basedir, names, add_gt=True, add_mask=False):  # 여러개를 로드하고 합병해서 특정 인스턴스파일들을 뭉친다.
         """
         Load and merges several instance files together.
 
-        Returns the same format as :meth:`COCODetection.load`.
+        Returns the same format as :meth:`COCODetection.load`. # cocodetection.load 라는 것과 같은 방식으로 리턴한다.
         """
-        if not isinstance(names, (list, tuple)):
-            names = [names]
-        ret = []
-        for n in names:
-            coco = COCODetection(basedir, n)
-            ret.extend(coco.load(add_gt, add_mask=add_mask))
-        return ret
+        if not isinstance(names, (list, tuple)): # 인스턴드가 list, tuple이 아니면, 이렇게 해석하는것 맞나?  @@@@@ 
+            names = [names] # 이름들을 names에 초기화한다.
+        ret = [] # 리스트 하나 만들고, 
+        for n in names: # 이름들을 가지고,
+            coco = COCODetection(basedir, n) # 코코 변수 하나를 만든다. 코코 변수는 무엇일까? @@@@@
+            ret.extend(coco.load(add_gt, add_mask=add_mask)) # ret에 coco.load를 해서 가지고 온 것을 계속 넣어준다. 그리고 반환한다.
+        return ret 
 
 
-if __name__ == '__main__':
-    c = COCODetection(cfg.DATA.BASEDIR, 'train2014')
-    gt_boxes = c.load(add_gt=True, add_mask=True)
-    print("#Images:", len(gt_boxes))
-    c.print_class_histogram(gt_boxes)
+if __name__ == '__main__': # 메인 함수 시작
+    c = COCODetection(cfg.DATA.BASEDIR, 'train2014') # 코코 디텍션에서 cfg라는 곳의 베이스폴더 이름과 train2014를 가지고 c라는 이름에 넣어준다.
+    gt_boxes = c.load(add_gt=True, add_mask=True) # ground truth 박스도 c에서 넣어준다.
+    print("#Images:", len(gt_boxes)) # gt_boxes의 길이를 출력
+    c.print_class_histogram(gt_boxes) # 그림을 그려준다. gt_bexes의 길이이다.
