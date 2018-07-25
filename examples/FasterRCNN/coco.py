@@ -165,25 +165,25 @@ class COCODetection(object): # 코코디텍션이라는 클래스 만든다.
             img['segmentation'] = [ # 세그멘테이션도 이와 동일한 맥락이다.
                 obj['segmentation'] for obj in valid_objs]
 
-    def print_class_histogram(self, imgs): # 
-        nr_class = len(COCOMeta.class_names)
-        hist_bins = np.arange(nr_class + 1)
+    def print_class_histogram(self, imgs): # 이미지 객체 리스트를 가지고와서 클래스 히스토그램을 그린다.
+        nr_class = len(COCOMeta.class_names)  # 클래스 이름의 길이를 nr_class라는 변수에 초기화해준다.
+        hist_bins = np.arange(nr_class + 1) # nr_class 에 1일 더하여 hist_bins라는 np를 만든다.
 
         # Histogram of ground-truth objects
-        gt_hist = np.zeros((nr_class,), dtype=np.int)
-        for entry in imgs:
+        gt_hist = np.zeros((nr_class,), dtype=np.int) # ground truth 히스토그램 변수를 만든다.
+        for entry in imgs: # 이미지 리스트에서 entry 라는 이름으로,
             # filter crowd?
-            gt_inds = np.where(
+            gt_inds = np.where( # numpy의 where 을 통해서 클래스가 0보다 크고, is_crowd가 0인 것의 위치를 찾는다.)
                 (entry['class'] > 0) & (entry['is_crowd'] == 0))[0]
-            gt_classes = entry['class'][gt_inds]
-            gt_hist += np.histogram(gt_classes, bins=hist_bins)[0]
-        data = [[COCOMeta.class_names[i], v] for i, v in enumerate(gt_hist)]
-        data.append(['total', sum([x[1] for x in data])])
-        table = tabulate(data, headers=['class', '#box'], tablefmt='pipe')
-        logger.info("Ground-Truth Boxes:\n" + colored(table, 'cyan'))
+            gt_classes = entry['class'][gt_inds] # 그래서 찾은 것을 gt_classes라는 것에 넣어준다.
+            gt_hist += np.histogram(gt_classes, bins=hist_bins)[0] # np histogram이라는 것을 사용해서 gt_hist를 만들어 준다. 이것을 반복한다.
+        data = [[COCOMeta.class_names[i], v] for i, v in enumerate(gt_hist)] # data 라는 곳에 유용한 것들을 모아놓는다. 결국 보여줄 것.
+        data.append(['total', sum([x[1] for x in data])]) # 데이터에 total 과 data의 있는 값들을 더 추가한다.
+        table = tabulate(data, headers=['class', '#box'], tablefmt='pipe') # 표를 만들어 준다.
+        logger.info("Ground-Truth Boxes:\n" + colored(table, 'cyan')) # 로그를 띄워준다.
 
     @staticmethod
-    def load_many(basedir, names, add_gt=True, add_mask=False):
+    def load_many(basedir, names, add_gt=True, add_mask=False):  # 
         """
         Load and merges several instance files together.
 
