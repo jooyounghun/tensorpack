@@ -75,7 +75,7 @@ class COCODetection(object): # 코코디텍션이라는 클래스 만든다.
 
         logger.info("Instances loaded from {}.".format(annotation_file)) # log 를 남겨준다.
 
-    def load(self, add_gt=True, add_mask=False): # 로딩 함수 (mask는 알겠는데 ground truth가 뭐지?)
+    def load(self, add_gt=True, add_mask=False): # 로딩 함수 (mask는 알겠는데 ground truth가 뭐지?)@@@@@
         """
         Args: 
             add_gt: whether to add ground truth bounding box annotations to the dicts
@@ -96,76 +96,76 @@ class COCODetection(object): # 코코디텍션이라는 클래스 만든다.
             imgs = self.coco.loadImgs(img_ids) # 이미지 아이디를 인덱스로 한 이미지 로딩
 
             for img in tqdm.tqdm(imgs): # tqdm으로 진행상황을 보여준다.
-                self._use_absolute_file_name(img) # _use_absuloute_file_name 은 어디서 온거지?@@@@@
+                self._use_absolute_file_name(img) # _use_absuloute_file_name 은 어디서 온거지? 바로 아래에서 온다.
                 if add_gt: # groung truth가 있다면
-                    self._add_detection_gt(img, add_mask) # _add_detection_gt함수를 수행하라. 근데 이 함수 뭐지? @@@@@
+                    self._add_detection_gt(img, add_mask) # _add_detection_gt함수를 수행하라. 근데 이 함수 뭐지? 아래에서 온다.
             return imgs # 로딩함수의 리턴값은 이미지 객체이다.
 
-    def _use_absolute_file_name(self, img):
+    def _use_absolute_file_name(self, img): # 이미지값을 받아와서 이미지 이름을 파일의 패스로 지정해준다.
         """
         Change relative filename to abosolute file name.
         """
         img['file_name'] = os.path.join(
             self._imgdir, img['file_name'])
-        assert os.path.isfile(img['file_name']), img['file_name']
+        assert os.path.isfile(img['file_name']), img['file_name'] # 파일이 없으면 예외처리해준다.
 
-    def _add_detection_gt(self, img, add_mask):
+    def _add_detection_gt(self, img, add_mask): # 디텍션을 위해 박스와 클래스와 is_crowd를 만든다. 이것인 ground truth인가?@@@@@
         """
         Add 'boxes', 'class', 'is_crowd' of this image to the dict, used by detection.
         If add_mask is True, also add 'segmentation' in coco poly format.
         """
         # ann_ids = self.coco.getAnnIds(imgIds=img['id'])
         # objs = self.coco.loadAnns(ann_ids)
-        objs = self.coco.imgToAnns[img['id']]  # equivalent but faster than the above two lines
+        objs = self.coco.imgToAnns[img['id']]  # equivalent but faster than the above two lines # id 값을 통해 이미지 객체 만든다.
 
         # clean-up boxes
-        valid_objs = []
-        width = img['width']
-        height = img['height']
-        for obj in objs:
-            if obj.get('ignore', 0) == 1:
+        valid_objs = [] # 리스트 하나 만들어서
+        width = img['width'] # 이미지 객체에 대한 width 값 초기화
+        height = img['height'] # height 값 초기화
+        for obj in objs: # 객체들 중에서
+            if obj.get('ignore', 0) == 1: # ignore 값이 있는 딕셔너리가 있으면 뛰어넘는다. 보지 않는다.
                 continue
-            x1, y1, w, h = obj['bbox']
+            x1, y1, w, h = obj['bbox'] # 객체에서 bbox 정보를 초기화한다.
             # bbox is originally in float
             # x1/y1 means upper-left corner and w/h means true w/h. This can be verified by segmentation pixels.
             # But we do assume that (0.0, 0.0) is upper-left corner of the first pixel
-            box = FloatBox(float(x1), float(y1),
+            box = FloatBox(float(x1), float(y1), # float 박스를 만든다.(네모난 박스를 만든다.)
                            float(x1 + w), float(y1 + h))
-            box.clip_by_shape([height, width])
+            box.clip_by_shape([height, width]) # clip_by_shape함수가 뭐지?@@@@@
             # Require non-zero seg area and more than 1x1 box size
-            if obj['area'] > 1 and box.is_box() and box.area() >= 4:
-                obj['bbox'] = [box.x1, box.y1, box.x2, box.y2]
-                valid_objs.append(obj)
+            if obj['area'] > 1 and box.is_box() and box.area() >= 4: # 객체의 너비가 1보다 크고 박스가 있고 박스의 너비가 4이상이면
+                obj['bbox'] = [box.x1, box.y1, box.x2, box.y2] # 객체의 bbox는 x1,x2,y1,y2로 지정해준다.
+                valid_objs.append(obj) # 그리고 객체를 유효한 객체들의 리스트에 넣는다.
 
-                if add_mask:
-                    segs = obj['segmentation']
-                    if not isinstance(segs, list):
-                        assert obj['iscrowd'] == 1
-                        obj['segmentation'] = None
+                if add_mask: # 그리고 여기서 마스크가 있으면(mask r cnn 일때를 말한다.)
+                    segs = obj['segmentation']  # 객체의 segmentation 부분을 가지고 segs 라는 변수를 초기화한다.
+                    if not isinstance(segs, list): # segs 라는 변수가 리스트가 아닐때,
+                        assert obj['iscrowd'] == 1 # 객체에 iscrowd가 1이면 예외처리해준다.
+                        obj['segmentation'] = None # 객체의 segmentation이 없다? @@@@@
                     else:
-                        valid_segs = [np.asarray(p).reshape(-1, 2).astype('float32') for p in segs if len(p) >= 6]
-                        if len(valid_segs) < len(segs):
-                            log_once("Image {} has invalid polygons!".format(img['file_name']), 'warn')
+                        valid_segs = [np.asarray(p).reshape(-1, 2).astype('float32') for p in segs if len(p) >= 6] # segs라는 리스트에서 유효한 것들만 뽑는다.
+                        if len(valid_segs) < len(segs): # 근데 segs들에서 유효한 segs들이 별로 없다면
+                            log_once("Image {} has invalid polygons!".format(img['file_name']), 'warn') # 로그를 띄운다. 별로 없어서 warning이라고
 
-                        obj['segmentation'] = valid_segs
+                        obj['segmentation'] = valid_segs # 유효한 segs들은 객체의 segmentation에 다시 넣어준다.
 
         # all geometrically-valid boxes are returned
-        boxes = np.asarray([obj['bbox'] for obj in valid_objs], dtype='float32')  # (n, 4)
-        cls = np.asarray([
+        boxes = np.asarray([obj['bbox'] for obj in valid_objs], dtype='float32')  # (n, 4) # 유효한 객체들의 bbox를 np를 통해 만든어 준다.
+        cls = np.asarray([ # 유효한 객체들로 클래스를 만든어 cls라는 변수를 만들어 준다. 
             COCOMeta.category_id_to_class_id[obj['category_id']]
-            for obj in valid_objs], dtype='int32')  # (n,)
-        is_crowd = np.asarray([obj['iscrowd'] for obj in valid_objs], dtype='int8')
+            for obj in valid_objs], dtype='int32')  # (n,) 
+        is_crowd = np.asarray([obj['iscrowd'] for obj in valid_objs], dtype='int8') # 유효한 객체에서 각 객체의 is_crowd 를 가지고 is_crowd라는 똑같은 이름의 변수를 초기화해준다.
 
         # add the keys
-        img['boxes'] = boxes        # nx4
-        img['class'] = cls          # n, always >0
-        img['is_crowd'] = is_crowd  # n,
-        if add_mask:
+        img['boxes'] = boxes        # nx4  # 박스들을 이미지 객체의 박스에 넣는다.  여기서 boxes는 아마 유효한 것들의 boxes 일것이다.
+        img['class'] = cls          # n, always >0   # 클래스들을 이미지 객체의 클래스에 넣는다.
+        img['is_crowd'] = is_crowd  # n, # is_crowd를 이미지 객체의 그것에 넣는다.
+        if add_mask: # 만약 마스크 rcnn 이라면
             # also required to be float32
-            img['segmentation'] = [
+            img['segmentation'] = [ # 세그멘테이션도 이와 동일한 맥락이다.
                 obj['segmentation'] for obj in valid_objs]
 
-    def print_class_histogram(self, imgs):
+    def print_class_histogram(self, imgs): # 
         nr_class = len(COCOMeta.class_names)
         hist_bins = np.arange(nr_class + 1)
 
