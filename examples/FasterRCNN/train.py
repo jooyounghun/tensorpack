@@ -503,38 +503,38 @@ class EvalCallback(Callback):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--load', help='load a model for evaluation or training. Can overwrite BACKBONE.WEIGHTS')
-    parser.add_argument('--logdir', help='log directory', default='train_log/maskrcnn')
-    parser.add_argument('--visualize', action='store_true', help='visualize intermediate results')
+    parser = argparse.ArgumentParser() # 인자값을 받아온다. 파이썬 모듈
+    parser.add_argument('--load', help='load a model for evaluation or training. Can overwrite BACKBONE.WEIGHTS') # 학습할 모델을 가져온다. 패스가 필요하다.
+    parser.add_argument('--logdir', help='log directory', default='train_log/maskrcnn') # 로그가 저장될 디렉토리를 지정해준다.
+    parser.add_argument('--visualize', action='store_true', help='visualize intermediate results') # 결과를 시각화해준다.
     parser.add_argument('--evaluate', help="Run evaluation on COCO. "
-                                           "This argument is the path to the output json evaluation file")
+                                           "This argument is the path to the output json evaluation file") # coco 데이터셋에 평가를 실행한다.
     parser.add_argument('--predict', help="Run prediction on a given image. "
-                                          "This argument is the path to the input image file")
+                                          "This argument is the path to the input image file") # 주어진 이미지에 예측을 해본다.
     parser.add_argument('--config', help="A list of KEY=VALUE to overwrite those defined in config.py",
-                        nargs='+')
+                        nargs='+') # nargs 옵션: 여러개의 config들을 모두 받아와준다. 
 
-    if get_tf_version_tuple() < (1, 6):
+    if get_tf_version_tuple() < (1, 6): # tensorflow version 을 1.6에 맞춰주어라 라는 의미.
         # https://github.com/tensorflow/tensorflow/issues/14657
         logger.warn("TF<1.6 has a bug which may lead to crash in FasterRCNN training if you're unlucky.")
 
-    args = parser.parse_args()
-    if args.config:
+    args = parser.parse_args() # 인자들을 파싱한다.
+    if args.config: # config 정보를 업데이트한다.
         cfg.update_args(args.config)
 
-    MODEL = ResNetFPNModel() if cfg.MODE_FPN else ResNetC4Model()
+    MODEL = ResNetFPNModel() if cfg.MODE_FPN else ResNetC4Model() # config에 fpn 쓸꺼면 ResNetFPNModel을 사용한다. 아니면 ResNetC4Model을 사용한다.
+    # FPN 논문 읽어야한다. object detection에 쓰이는 pyramid 방법이다. 
+    if args.visualize or args.evaluate or args.predict: # 시각화나, 평가나 예측 하려면
+        assert args.load #모델을 가져온다. 없으면 에러.
+        finalize_configs(is_training=False)  # gpu 세팅하는것 같은데 일단 이렇게 알고있자.
 
-    if args.visualize or args.evaluate or args.predict:
-        assert args.load
-        finalize_configs(is_training=False)
+        if args.predict or args.visualize: # 예측을 하거나 시각화를 하면
+            cfg.TEST.RESULT_SCORE_THRESH = cfg.TEST.RESULT_SCORE_THRESH_VIS # 잘 나온 것들만 시각화하는 것 같다.
 
-        if args.predict or args.visualize:
-            cfg.TEST.RESULT_SCORE_THRESH = cfg.TEST.RESULT_SCORE_THRESH_VIS
-
-        if args.visualize:
-            visualize(MODEL, args.load)
-        else:
-            pred = OfflinePredictor(PredictConfig(
+        if args.visualize: # 시각화를 한다면
+            visualize(MODEL, args.load)  # 모델을 입력받아서 그림을 그려준다.
+        else: # 시각화를 하지 않으면
+            pred = OfflinePredictor(PredictConfig( # 
                 model=MODEL,
                 session_init=get_model_loader(args.load),
                 input_names=MODEL.get_inference_tensor_names()[0],
